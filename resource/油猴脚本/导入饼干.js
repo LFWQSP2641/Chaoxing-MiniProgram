@@ -1,9 +1,13 @@
 // ==UserScript==
 // @name         超星 Cookie 导入助手
 // @namespace    http://tampermonkey.net/
-// @version      1.0.1
+// @version      1.0.2
 // @description  在 chaoxing 页面右上角添加按钮导入 JSON 格式 Cookie，仅主页面生效
 // @match        https://passport2.chaoxing.com/login*
+// @match        https://i.chaoxing.com/*
+// @match        https://sso.chaoxing.com/apis/login/userLogin4Uname.do?referer=*
+// @updateURL    https://cdn.oplist.org/gh/Misaka-1314/Chaoxing-MiniProgram@main/resource/油猴脚本/导入饼干.js
+// @downloadURL  https://cdn.oplist.org/gh/Misaka-1314/Chaoxing-MiniProgram@main/resource/油猴脚本/导入饼干.js
 // @grant        none
 // ==/UserScript==
 
@@ -11,6 +15,14 @@
     'use strict';
 
     if (window.top !== window.self) return; // 只在顶层执行
+
+    if (window.location.hostname === "sso.chaoxing.com") { // 重定向 sso
+        const url = new URL(window.location.href);
+        const referer = url.searchParams.get("referer");
+        if (referer)
+            window.location.replace(`https://${referer}`);
+        return;
+    }
 
     const btn = document.createElement("button");
     btn.innerText = "导入 Cookies";
@@ -32,7 +44,7 @@
         if (!input) return;
 
         const cookies = JSON.parse(input);
-        const domains = [".chaoxing.com"];
+        const domains = [".chaoxing.com", "sso.chaoxing.com", "passport2.chaoxing.com", "i.chaoxing.com"];
         const path = "/";
 
         for (const domain of domains) {
@@ -40,11 +52,6 @@
                 document.cookie = `${key}=${encodeURIComponent(decodeURIComponent(value))}; domain=${domain}; path=${path}`;
             }
         }
-        fetch("https://sso.chaoxing.com/apis/login/userLogin4Uname.do")
-            .then(resp => resp.json())
-            .then(res => {
-                console.info(res);
-                window.location.href = "https://i.chaoxing.com/";
-            });
+        window.location.replace("https://sso.chaoxing.com/apis/login/userLogin4Uname.do?referer=i.chaoxing.com");
     });
 })();
